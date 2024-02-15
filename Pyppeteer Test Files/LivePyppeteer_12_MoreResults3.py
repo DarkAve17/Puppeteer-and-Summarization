@@ -1,12 +1,29 @@
 import asyncio
 from pyppeteer import launch
+import time
+
+async def click_next_button(page):
+    button_found = False
+    button_selectors = ":text('Next'), :text('Next page'),:text('More results')"
+    await page.waitForSelector(button_selectors, visible = True)
+    for selector in button_selectors:
+        button = await page.querySelector(selector)
+        if button:
+            await button.click()
+            button_found = True
+            break
+    if button_found:
+        return True  # Indicate button was clicked
+    else:
+        return False
+
 
 async def main():
-    searchfor = input("Enter Keyword to search: ")  # Uncomment if using search functionality
+    searchfor = input("Enter Keyword to search: ")  
     filename = "Search_" + searchfor + ".CSV"
 
     try:
-        browser = await launch()
+        browser = await launch(headless=False)
         context = await browser.createIncognitoBrowserContext()
         page = await context.newPage()
 
@@ -15,7 +32,7 @@ async def main():
         await search_bar.type(searchfor)
         await page.keyboard.press("Enter")
         await page.waitForNavigation()
-
+        time.sleep(15)
         # List to store all collected sponsor links:
         all_sponsored_links = []
 
@@ -27,39 +44,20 @@ async def main():
 
             # Extract links from current page:
             for sponsored_element in sponsored_elements:
-                #Your link extraction logic using link_selectors as before
-                #Two selectors for potentially different link classes:
+                # Two selectors for potentially different link classes:
                 link_selectors = ["a.cz3goc.BmP5tf", "a.sVXRqc"]
 
                 for link_selector in link_selectors:
                     sponsored_links = await sponsored_element.querySelectorAll(link_selector)
-                # Collect links from this element:
+                    # Collect links from this element:
                     for link in sponsored_links:
                         href = await link.getProperty('href')
                         href_str = await href.jsonValue()
                         all_sponsored_links.append(href_str)
                         print(f"Found sponsored link: {href_str}")
 
-            # Function to click "Next" or "Show more" button (if exists)
-            async def click_next_button():
-                button_found = False
-                for button_selectors in [
-                    ["div.Gx5Zad.xpd.EtOod.pkphOe.BmP5tf a.nBDE1b.G5eFlf", ":contains('Next')"],  # Next button
-                    ["div.GNJvt.ipz2Oe > span.kQdGHd > span.OTvAmd.z1asCe.QFl0Ff", ":contains('More results')"],  # Show more button
-                ]:
-                    for selector in button_selectors:
-                        button = await page.querySelector(selector)
-                        if button:
-                            await button.click()
-                            button_found = True
-                            break
-                if button_found:
-                    return True  # Indicate button was clicked
-                else:
-                    return False  # No button found
-
-            # Attempt to click "Next" or "Show more" button, break if not found
-            button_clicked = await click_next_button()
+            # Click "Next" or "Show more" button (if exists)
+            button_clicked = await click_next_button(page)
             if not button_clicked:
                 break  # No more buttons, exit loop
 
