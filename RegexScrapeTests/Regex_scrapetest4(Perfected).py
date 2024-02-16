@@ -5,14 +5,14 @@ import re
 async def main():
     browser = await launch()
     page = await browser.newPage()
-    await page.goto('https://sanctushealthcare.com/contact/') #http://127.0.0.1:5500/HTML%20Files/My%20Care.html
+    await page.goto('https://www.mycareindia.co.in/')  #https://sanctushealthcare.com/contact/ #http://127.0.0.1:5500/HTML%20Files/My%20Care.html
 
     html_content = await page.content()
 
-    phone_numbers = re.findall(r"(\+\d{2})[- ]?(\d{10})", html_content)
+    phone_numbers = re.findall(r"(\+\d{2})[- ]?(\d{10})", html_content)    
 
     print()
-    print(f"Phone Numbers = {phone_numbers}")
+    #print(f"Phone Numbers = {phone_numbers}")
     print()
     unique_phone_numbers = set()
     for number in phone_numbers:
@@ -28,14 +28,21 @@ async def main():
             unique_phone_numbers.add(unique_identifier)
 
     unique_phone_numbers_list = list(unique_phone_numbers)
-    print("Unique Phone Numbers:", unique_phone_numbers_list)
+    #print("Unique Phone Numbers:", unique_phone_numbers_list)
     print()
     print()
     print()
 
     cleaned_strings = unique_phone_numbers_list
-
-    print("Phone Numbers:", cleaned_strings)
+    number_printer = ""
+    for i in cleaned_strings:
+        if(i == cleaned_strings[0]):
+            number_printer = number_printer+i
+        else:
+            number_printer = number_printer+ ", "+i
+       
+        
+    print("Phone Numbers:", number_printer)
     await browser.close()
 
 asyncio.run(main())
