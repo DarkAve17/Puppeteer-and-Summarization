@@ -1,26 +1,35 @@
-import re
 import asyncio
 from pyppeteer import launch
+import re
+import os
 
+async def main():
+    browser = await launch()
+    page = await browser.newPage()
+    
+    file_path = os.path.join(os.path.expanduser("~"), "Documents", "GitHub Repos", "Puppeteer and Summarization", "test.html")
+    await page.goto(file_path)
+    await page.goto("https://www.lightsnovel.com/content/warlock-of-the-magus-world(1)-584-457042/chapter-289")
+    # Combine plain text and href methods
+    email_addresses = []
 
-async def extract_phone_numbers(url):
-  
-  browser = await launch()
-  page = await browser.newPage()
-  await page.goto(r'http://127.0.0.1:5500/HTML%20Files/My%20Care.html')
-  html_content = await page.content()
-  await browser.close()
-  
-  phone_numbers = re.findall(r"(?:\+91)?(\d{3}[ -]?\d{3}[ -]?\d{4})", html_content)
-  return phone_numbers
+    # 1. Extract from plain text using regex:
+    webpage = await page.content()
+    plain_text_emails = re.findall(r"\b[\w\.-]+@[\w\.-]+\.\w+\b", webpage)
+    email_addresses.extend(plain_text_emails)
 
-# Example usage
-#html_file = r"C:\Users\mridu\Documents\GitHub Repos\Puppeteer and Summarization\HTML Files\My Care.html"
-#extracted_numbers = extract_phone_numbers(html_file)
+    # 2. Extract from href attributes:
+    email_elements = await page.querySelectorAll('.footer-menu-item a[href^="mailto:"]')
+    for element in email_elements:
+        email_address = await element.get_property('href')
+        if "mailto:" in email_address:  # Check for mailto: presence
+            email_addresses.append(email_address.replace('mailto:', ''))
 
-#print("Extracted phone numbers:")
-#for number in extracted_numbers:
-#  print(number)
+    # Print or use extracted emails
+    print("Extracted email addresses:")
+    for email in set(email_addresses):  # Remove duplicates
+        print(email)
 
+    await browser.close()
 
-asyncio.run(extract_phone_numbers("http://localhost:8000/your_file.html"))
+asyncio.run(main())
