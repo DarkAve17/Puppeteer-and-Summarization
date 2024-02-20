@@ -4,9 +4,24 @@ import re
 import time
 import csv
 
+async def try_click_contact_button(page):
+    """to click on a Button labelled as contact info"""
+    try:
+        contact_buttons = await page.querySelectorAll(
+            'button:text-matches("Contact", "contact", "Get in touch", "Contact Us")'
+        )
+
+        if contact_buttons:
+            # Click the first matching button and wait for navigation:
+            await contact_buttons[0].click()
+            await page.waitForNavigation()  # Wait for button click to load new content
+
+    except Exception as e:
+        print(f"Error checking or clicking contact button: {e}")
+
+
 async def extract_contact_info(page, url):
-    """Extracts phone numbers and emails from a given webpage,
-    optionally clicking on a "Contact" button if found."""
+    """Extracts phone numbers and emails from a given webpage."""
     await page.goto(url)
     webpage = await page.content()
 
@@ -27,18 +42,8 @@ async def extract_contact_info(page, url):
     for email in email_adresses:
         unique_emails.add(email)
 
-    # Check for and click "Contact" button if present:
-    try:
-        contact_button = await page.querySelector('button:text-matches("Contact")')
-
-        if contact_button:
-            await contact_button.click()
-            await page.waitForNavigation()  # Wait for button click to load new content
-
-    except Exception as e:
-        print(f"Error checking or clicking contact button: {e}")
-
-    # Return extracted information:
+    # Extract contact info after potential button click:
+    await try_click_contact_button(page)
     return unique_phone_numbers, unique_emails
 
 
