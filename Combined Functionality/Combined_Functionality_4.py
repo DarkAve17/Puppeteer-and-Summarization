@@ -7,17 +7,60 @@ import csv
 async def try_click_contact_button(page):
     """to click on a Button labelled as contact info"""
     try:
-        contact_buttons = await page.querySelectorAll(
-            'button:text-matches("Contact", "contact", "Get in touch", "Contact Us")'
-        )
+        contact_buttons = await page.xpath("//button[contains(., 'Contact')]")
 
         if contact_buttons:
-            # Click the first matching button and wait for navigation:
+        # Click the first found button
             await contact_buttons[0].click()
             await page.waitForNavigation()  # Wait for button click to load new content
 
     except Exception as e:
         print(f"Error checking or clicking contact button: {e}")
+
+async def click_next_button(page):
+    """
+    Tries to find and click the "Next" button using generic selectors,
+    followed by scroll monitoring. Returns True if a button was clicked
+    or new content was loaded, False otherwise.
+    """
+
+    button_found = False
+
+    # Try with various XPath expressions:
+    xpath_expressions = [
+        "//button[contains(., 'Next')]",
+        "//button[contains(., 'Next page')]",
+        "//button[contains(., 'More results')]",
+    ]
+
+    for xpath_expression in xpath_expressions:
+        try:
+            button = await page.xpath(xpath_expression)
+            if button:
+                await button[0].click()  # Click the first found button
+                button_found = True
+                break
+        except Exception as e:
+            print(f"Error finding button with XPath '{xpath_expression}': {e}")
+
+    # If no button found, check for new content:
+    if not button_found:
+        # Get initial scroll position and document height:
+        initial_scroll = await page.evaluate("window.scrollY")
+        initial_height = await page.evaluate("document.body.scrollHeight")
+
+        # Scroll down and wait for potential content load:
+        await page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
+        await asyncio.sleep(2)  # Adjust wait time if needed
+
+        # Check if scroll position or document height changed:
+        final_scroll = await page.evaluate("window.scrollY")
+        final_height = await page.evaluate("document.body.scrollHeight")
+
+        if final_scroll > initial_scroll or final_height > initial_height:
+            button_found = True  # Consider new content loaded
+
+    return button_found
 
 
 async def extract_contact_info(page, url):
@@ -114,49 +157,6 @@ async def main():
 
     await browser.close()
 
-async def click_next_button(page):
-    """
-    Tries to find and click the "Next" button using generic selectors,
-    followed by scroll monitoring. Returns True if a button was clicked
-    or new content was loaded, False otherwise.
-    """
 
-    button_found = False
-
-    # Try with various generic selectors:
-    selectors = [
-        ":text-matches('Next', 'Next page')",
-        ":text-matches('More results')",
-        "button:text-matches('Next', 'Next page')",  # Include buttons with text
-    ]
-
-    for selector in selectors:
-        try:
-            button = await page.querySelector(selector)
-            if button:
-                await button.click()
-                button_found = True
-                break
-        except Exception as e:
-            print(f"Error finding button with selector '{selector}': {e}")
-
-    # If no button found, check for new content:
-    if not button_found:
-        # Get initial scroll position and document height:
-        initial_scroll = await page.evaluate("window.scrollY")
-        initial_height = await page.evaluate("document.body.scrollHeight")
-
-        # Scroll down and wait for potential content load:
-        await page.evaluate("window.scrollBy(0, document.body.scrollHeight)")
-        await asyncio.sleep(2)  # Adjust wait time if needed
-
-        # Check if scroll position or document height changed:
-        final_scroll = await page.evaluate("window.scrollY")
-        final_height = await page.evaluate("document.body.scrollHeight")
-
-        if final_scroll > initial_scroll or final_height > initial_height:
-            button_found = True  # Consider new content loaded
-
-    return button_found
 
 asyncio.run(main())

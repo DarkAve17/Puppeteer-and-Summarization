@@ -1,0 +1,152 @@
+var id_user="7602c0a2e68379d347cf267b4fe85492";var retur_user=false;var ls = [];
+
+window.onload = async function () {
+	var idAnalytics = await getIdAnalyticsT();
+  	var usesAdBlocker = hasAdBlocker();
+
+	var updData = {
+		id_request: id_request,
+		id_session: id_session,
+		id_user: id_user,
+		user_returning: retur_user,
+		user_adblocker: usesAdBlocker,
+		id_analytics: idAnalytics,
+		time_user: Math.floor(Date.now() / 1000)
+	};
+	sendAnalytics(updData);
+};
+var sendEvent = function (evName, evCategory, evAction, evValue) {
+
+	var evRetryvn = evName + evCategory + evAction + evValue;
+	if (ls[evRetryvn]) {
+		ls[evRetryvn] = Number(ls[evRetryvn]) + 1;
+	} else {
+		ls[evRetryvn] = 1;
+	}
+
+	var evData = {
+		id_request: id_request,
+		id_session: id_session,
+		event_name: evName,
+		event_category: evCategory,
+		event_action: evAction,
+		event_value: evValue,
+		event_retry: ls[evRetryvn]
+
+	};
+	//sendAnalytics(evData);
+}
+var sendAnalytics = function (data) {
+	$.ajax({
+		url: 'https://www.signidata.com/js/api',
+		method: 'post',
+		crossDomain: true,
+		dataType: "json",
+		data: JSON.stringify(data)
+	}).done(function (response) {
+		
+	});
+}
+var frm=function(str){
+    var ret=""
+    for(i = 0, len = str.length; i < len;  i++) {
+      if(i===8 || i===12 || i===16 || i===20){
+        ret+="-";
+      }
+      ret+=str[i]
+     }
+   
+     return ret
+  }
+
+var sendTRacker=function(){
+	ga(function() {   
+		// look for a tracker called 'identified' (exists
+		//   only after login)
+		var tracker = ga.getByName('identified');
+		if (typeof(tracker) == 'undefined') {
+		  // if does not exist, send the event using 
+		  //   the default tracker
+		  //ga('send', 'pageview');
+		  ga('send', 'event', 'authentication', 'user-id available');
+		} else {
+		  // if exists, send the event using that tracker
+		  //ga('identified.send', 'pageview');
+		  ga('identified.send', 'event', 'authentication', 'user-id available');
+		}
+	  });
+	
+}
+ var sendImpression=function(impression){
+		var updData = {impression:impression};
+		sendAnalytics(updData);
+ }
+
+var getIdAnalyticsT = function () {
+	var interval = 0;
+	var ret_id = "";
+	return new Promise(function (res, rej) {
+		var int = setInterval(function () {
+			if (typeof ga === "function") {
+				
+				if (typeof ga.getAll === "function") {
+					var cl_id=frm(id_request);
+					//ga('create',ga.getAll()[0].b.data.values[':trackingId'] , {'clientId':  cl_id});
+					var trackers = ga.getAll();
+					var i, len;
+					for (i = 0, len = trackers.length; i < len; i += 1) {
+						ret_id = trackers[i].get('clientId').toLowerCase().trim();
+						clearInterval(int);
+						res(ret_id);
+					}
+				}
+			}
+			interval++;
+			if (interval > 20) {
+				clearInterval(int);
+				res("no_cid");
+			}
+		}, 50);
+	});
+};
+
+/**
+ * Simple adblock detection
+ */
+function hasAdBlocker() {
+  function hasFairAdBlocker() {
+    const style = document.getElementById('stndz-style');
+    return style !== null;
+  }
+
+  function hasEasyListBasedBlocker() {
+    const bait = document.createElement('div');
+    bait.setAttribute('class', 'zn-sponsored-outbrain-cl pub_300x250 pub_300x250m pub_728x90 text-ad textAd text_ad text_ads text-ads text-ad-links ad-text adSense adBlock adContent adBanner');
+    bait.setAttribute('style', 'width: 1px !important; height: 1px !important; position: absolute !important; top: -10px !important; left: -10px; color: rgba(0, 0, 0, 0); background-color: rgba(0, 0, 0, 0)');
+    document.body.appendChild(bait);
+
+    if(bait.offsetParent === null
+      || bait.offsetHeight == 0
+      || bait.offsetTop == 0
+      || bait.offsetLeft == 0
+      || bait.offsetWidth == 0
+      || bait.clientHeight == 0
+      || bait.clientWidth == 0) {
+      return true;
+    } else if(window.getComputedStyle !== undefined) {
+      const baitCS = window.getComputedStyle(bait, null);
+      if(baitCS && (baitCS.getPropertyValue('display') == 'none' || baitCS.getPropertyValue('visibility') == 'hidden')) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+
+  if (hasFairAdBlocker())  {
+    return true;
+  }
+
+  return hasEasyListBasedBlocker();
+}
