@@ -5,24 +5,67 @@ import re
 import csv
 
 async def try_click_contact_button(page):
-    """to click on a Button labelled as contact info"""
-    try:
-        contact_buttons = await page.xpath("//button[contains(., 'Contact')]")
-
-        if contact_buttons:
-        # Click the first found button
-            await contact_buttons[0].click()
-            await page.waitForNavigation()  # Wait for button click to load new content
-
-    except Exception as e:
-        print(f"Error checking or clicking contact button: {e}")
-
-
-
-
-async def click_next_button(page):
+    """Try to click on a button labeled as 'Contact'"""
     button_found = False
 
+    try:
+        # Search for the "Contact" button in the main body
+        body_buttons = await page.querySelectorAll("button:has-text('Contact')")
+        for button in body_buttons:
+            text = await page.evaluate('(element) => element.textContent', button)
+            print(text)
+            if "Contact" in text:
+                # Click the button
+                await button.click()
+                print("Contact button found and clicked in the main body.")
+                button_found = True
+                await page.waitForNavigation()
+                return
+            else:
+                print("No contact button in the Body")
+
+        # Search for the "Contact" button in the header
+        header_buttons = await page.querySelectorAll("header button:has-text('Contact')")
+        for button in header_buttons:
+            text = await page.evaluate('(element) => element.textContent', button)
+            print(text)
+            if "Contact" in text:
+                # Click the button
+                await button.click()
+                print("Contact button found and clicked in the header.")
+                button_found = True
+                await page.waitForNavigation()
+                return
+            else:
+                print("No contact button in the header")
+
+        # Search for the "Contact" button in the footer
+        footer_buttons = await page.querySelectorAll("footer button:has-text('Contact')")
+        for button in footer_buttons:
+            text = await page.evaluate('(element) => element.textContent', button)
+            print(text)
+            if "Contact" in text:
+                # Click the button
+                await button.click()
+                print("Contact button found and clicked in the footer.")
+                button_found = True
+                await page.waitForNavigation()
+                return
+            else:
+                print("No contact button in the footer")
+
+    except Exception as e:
+        print(f"Error finding or clicking contact button: {e}")
+
+    if not button_found:
+        print("Contact button not found.")
+
+
+
+
+async def click_next_button(page,pagenum):
+    button_found = False
+    
     try:
         # Get all footer buttons with the specified classes
         footer_buttons = await page.querySelectorAll("footer a.nBDE1b.G5eFlf")
@@ -31,11 +74,12 @@ async def click_next_button(page):
             # Iterate through each footer button to find the "Next" button
             for footer_button in footer_buttons:
                 text = await page.evaluate('(element) => element.textContent', footer_button)
-                print(text)
+                #print(text)
                 if "Next" in text or ">" in text:
                     # Click the button
                     await footer_button.click()
-                    print("Next button found and clicked in the footer.")
+                    print(f"iterated through page {pagenum}")
+                    
                     button_found = True
                     await asyncio.sleep(2)
                     break  # Exit the loop once the button is found
@@ -120,21 +164,26 @@ async def find_all_sponsored_links(page):
 
     all_sponsored_links = []
     #consecutive_iterations_without_new_links = 0
-
+    counter=0
+    pagenum = 1
     while True:
         current_sponsored_links = await find_sponsored_links_on_page(page)
 
+        if set(current_sponsored_links).issubset(set(all_sponsored_links)):
+            counter+=1
+        
         # Check if all current links are already seen or limit reached
-        if set(current_sponsored_links).issubset(set(all_sponsored_links)) or len(all_sponsored_links) >= 100:
+        if len(all_sponsored_links) >= 100 or counter>15:   #change the number of the counter greater than value to how mnay pages you want to check it consecutively finds no new sponsored links
             break
 
         # Update seen links and try clicking "Next" button
         all_sponsored_links.extend(current_sponsored_links)
-        next_button_found = await click_next_button(page)
+        next_button_found = await click_next_button(page,pagenum)
 
         if next_button_found:
             # Wait for new content to load after clicking next
             await asyncio.sleep(2)  # Adjust wait time as needed
+            pagenum +=1
 
         # Scroll down
         try:
@@ -152,7 +201,7 @@ async def main():
     filename = "Details_on_" + searchfor + ".CSV"
 
     try:
-        browser = await launch(headless=False, defaultViewport=None, args=['--window-size=1920,1080'])
+        browser = await launch(headless=True, defaultViewport=None, args=['--window-size=1920,1080'])
         context = await browser.createIncognitoBrowserContext()
         page = await context.newPage()
 
