@@ -13,7 +13,7 @@ async def try_click_contact_button(page):
         body_buttons = await page.querySelectorAll("button")
         for button in body_buttons:
             text = await page.evaluate('(element) => element.textContent', button)
-            print(text)
+            #print(text)
             if "Contact" in text:
                 # Click the button
                 await button.click()
@@ -32,7 +32,7 @@ async def try_click_contact_button(page):
             if "Contact" in text:
                 # Click the button
                 await button.click()
-                print("Contact button found and clicked in the header.")
+                print("Contact button found and clicked in the header.")#
                 button_found = True
                 await page.waitForNavigation()
                 return
@@ -43,7 +43,7 @@ async def try_click_contact_button(page):
         footer_buttons = await page.querySelectorAll("footer button")
         for button in footer_buttons:
             text = await page.evaluate('(element) => element.textContent', button)
-            print(text)
+            #print(text)
             if "Contact" in text:
                 # Click the button
                 await button.click()
