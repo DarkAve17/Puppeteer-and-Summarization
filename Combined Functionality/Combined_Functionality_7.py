@@ -10,7 +10,7 @@ async def try_click_contact_button(page):
 
     try:
         # Search for the "Contact" button in the main body
-        body_buttons = await page.querySelectorAll("button:has-text('Contact')")
+        body_buttons = await page.querySelectorAll("button")
         for button in body_buttons:
             text = await page.evaluate('(element) => element.textContent', button)
             print(text)
@@ -25,7 +25,7 @@ async def try_click_contact_button(page):
                 print("No contact button in the Body")
 
         # Search for the "Contact" button in the header
-        header_buttons = await page.querySelectorAll("header button:has-text('Contact')")
+        header_buttons = await page.querySelectorAll("header button")
         for button in header_buttons:
             text = await page.evaluate('(element) => element.textContent', button)
             print(text)
@@ -40,7 +40,7 @@ async def try_click_contact_button(page):
                 print("No contact button in the header")
 
         # Search for the "Contact" button in the footer
-        footer_buttons = await page.querySelectorAll("footer button:has-text('Contact')")
+        footer_buttons = await page.querySelectorAll("footer button")
         for button in footer_buttons:
             text = await page.evaluate('(element) => element.textContent', button)
             print(text)
@@ -63,6 +63,7 @@ async def try_click_contact_button(page):
 
 
 
+
 async def click_next_button(page,pagenum):
     button_found = False
     
@@ -78,7 +79,7 @@ async def click_next_button(page,pagenum):
                 if "Next" in text or ">" in text:
                     # Click the button
                     await footer_button.click()
-                    print(f"iterated through page {pagenum}")
+                    print(f"Iterated through page {pagenum}")
                     
                     button_found = True
                     await asyncio.sleep(2)
