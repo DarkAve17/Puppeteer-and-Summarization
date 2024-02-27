@@ -26,18 +26,19 @@ async def click_next_button(page):
     try:
         # Get all footer buttons with the specified classes
         footer_buttons = await page.querySelectorAll("footer a.nBDE1b.G5eFlf")
-
+        pagenum = 1
         if footer_buttons:
             # Iterate through each footer button to find the "Next" button
             for footer_button in footer_buttons:
                 text = await page.evaluate('(element) => element.textContent', footer_button)
-                print(text)
+                print(f"page {pagenum} iterated through")
+                
                 if "Next" in text or ">" in text:
                     # Click the button
                     await footer_button.click()
-                    print("Page Iterated")
                     button_found = True
-                    await asyncio.sleep(7)
+                    pagenum+=1
+                    await asyncio.sleep(3)
                     break  # Exit the loop once the button is found
             
             if not button_found:
@@ -152,7 +153,7 @@ async def main():
     filename = "Details_on_" + searchfor + ".CSV"
 
     try:
-        browser = await launch(headless=False, defaultViewport=None, args=['--window-size=1920,1080'])
+        browser = await launch(headless=True, defaultViewport=None, args=['--window-size=1920,1080'])
         context = await browser.createIncognitoBrowserContext()
         page = await context.newPage()
 
